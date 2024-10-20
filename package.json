@@ -1,0 +1,16 @@
+{
+  "name": "tiktok-downloader",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "follow-redirects": "^1.15.9",
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}
