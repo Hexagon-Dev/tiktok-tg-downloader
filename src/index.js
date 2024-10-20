@@ -1,6 +1,7 @@
 require('dotenv').config()
 const TelegramBot = require('node-telegram-bot-api');
 const fs = require("node:fs");
+const stream = require("node:stream");
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
@@ -34,15 +35,15 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
       await bot.sendVideo(chatId, meta.url);
     } catch (e) {
       try {
-        const file = fs.createWriteStream('file.mp4');
-        const request = require('https').get(meta.url, function(response) {
-          response.pipe(file);
-          file.on('finish', file.close);
-        });
+        require('https').get(meta.url, async (response) => {
+          if (response.statusCode !== 200) {
+            await bot.sendMessage(chatId, 'Failed to send video, error: ' + response.statusCode + ' - ' + meta.url);
 
-        await request;
+            return;
+          }
 
-        await bot.sendVideo(chatId, file);
+          await bot.sendVideo(chatId, response);
+        }).on('error', async (error) => bot.sendMessage(chatId, 'Failed to fetch video, error: ' + error + ' - ' + meta.url));
       } catch (e) {
         await bot.sendMessage(chatId, 'Failed to send video, error: ' + e + ' - ' + meta.url);
       }
@@ -51,6 +52,22 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
     await bot.sendMessage(chatId, 'Failed to fetch tiktok url, URL is not available.');
   }
 });
+
+const getStreamFromUrl = (url) => {
+  return new Promise((resolve, reject) => {
+    require('https').get(url, (response) => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to get '${url}' (${response.statusCode})`));
+        return;
+      }
+
+      // Resolve the stream
+      resolve(response);
+    }).on('error', (err) => {
+      reject(err);
+    });
+  });
+};
 
 const getId = async (url) => {
   // If mobile link, fetch the desktop link first.
