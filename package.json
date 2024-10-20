@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "dotenv": "^16.4.5",
     "follow-redirects": "^1.15.9",
     "node-telegram-bot-api": "^0.66.0"
   }
