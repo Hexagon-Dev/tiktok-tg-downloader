@@ -34,7 +34,15 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
       await bot.sendVideo(chatId, meta.url);
     } catch (e) {
       try {
-        await bot.sendVideo(chatId, fs.createReadStream(meta.url));
+        const file = fs.createWriteStream('file.mp4');
+        const request = require('https').get(meta.url, function(response) {
+          response.pipe(file);
+          file.on('finish', file.close);
+        });
+
+        await request;
+
+        await bot.sendVideo(chatId, file);
       } catch (e) {
         await bot.sendMessage(chatId, 'Failed to send video, error: ' + e + ' - ' + meta.url);
       }
