@@ -148,8 +148,8 @@ const getMeta = async (url, watermark) => {
 
     if (watermark && video.download_addr && video.download_addr.url_list && video.download_addr.url_list.length > 0) {
       // Try to take the smallest video
-      if (video.download_addr.bit_rate) {
-        urlMedia = video.download_addr.bit_rate[video.download_addr.bit_rate.length - 1].play_addr.url_list[0];
+      if (video.bit_rate) {
+        urlMedia = video.bit_rate[video.bit_rate.length - 1].play_addr.url_list[0];
       }
 
       if (!urlMedia) {
