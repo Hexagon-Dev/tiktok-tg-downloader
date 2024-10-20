@@ -5,9 +5,16 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 bot.onText(/\/tt (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   let meta;
+  const url = match[1];
+
+  if (!url || !/https:\/\/(vm|www)\.tiktok\.com/.test(url)) {
+    await bot.sendMessage(chatId, 'Please provide a TikTok URL.');
+
+    return
+  }
 
   try {
-    meta = await retry(() => getMeta(match[1], true));
+    meta = await retry(() => getMeta(url, true));
   } catch (error) {
     await bot.sendMessage(chatId, 'Failed to fetch tiktok url, error: ' + error);
 
