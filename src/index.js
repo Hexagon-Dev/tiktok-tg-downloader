@@ -29,7 +29,11 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
       await bot.sendMediaGroup(chatId, meta.images.map((url) => ({ type: 'photo', media: url })));
     }
   } else if (meta.url) {
-    await bot.sendVideo(chatId, meta.url);
+    try {
+      await bot.sendVideo(chatId, meta.url);
+    } catch (e) {
+      await bot.sendMessage(chatId, 'Failed to send video, error: ' + e + ' - ' + meta.url);
+    }
   } else {
     await bot.sendMessage(chatId, 'Failed to fetch tiktok url, URL is not available.');
   }
