@@ -1,5 +1,6 @@
 require('dotenv').config()
 const TelegramBot = require('node-telegram-bot-api');
+const fs = require("node:fs");
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
@@ -32,7 +33,11 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
     try {
       await bot.sendVideo(chatId, meta.url);
     } catch (e) {
-      await bot.sendMessage(chatId, 'Failed to send video, error: ' + e + ' - ' + meta.url);
+      try {
+        await bot.sendVideo(chatId, fs.createReadStream(meta.url));
+      } catch (e) {
+        await bot.sendMessage(chatId, 'Failed to send video, error: ' + e + ' - ' + meta.url);
+      }
     }
   } else {
     await bot.sendMessage(chatId, 'Failed to fetch tiktok url, URL is not available.');
