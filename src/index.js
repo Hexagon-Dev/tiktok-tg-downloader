@@ -1,7 +1,5 @@
 require('dotenv').config()
 const TelegramBot = require('node-telegram-bot-api');
-const fs = require("node:fs");
-const stream = require("node:stream");
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
@@ -52,22 +50,6 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
     await bot.sendMessage(chatId, 'Failed to fetch tiktok url, URL is not available.');
   }
 });
-
-const getStreamFromUrl = (url) => {
-  return new Promise((resolve, reject) => {
-    require('https').get(url, (response) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`Failed to get '${url}' (${response.statusCode})`));
-        return;
-      }
-
-      // Resolve the stream
-      resolve(response);
-    }).on('error', (err) => {
-      reject(err);
-    });
-  });
-};
 
 const getId = async (url) => {
   // If mobile link, fetch the desktop link first.
@@ -149,7 +131,9 @@ const getMeta = async (url, watermark) => {
     if (watermark && video.download_addr && video.download_addr.url_list && video.download_addr.url_list.length > 0) {
       // Try to take the smallest video
       if (video.bit_rate) {
-        urlMedia = video.bit_rate[video.bit_rate.length - 1].play_addr.url_list[0];
+        urlMedia = video.bit_rate
+          .reduce((lowest, item) => (lowest.bit_rate && item.bit_rate < lowest.bit_rate) ? item : lowest)
+          .play_addr.url_list[0];
       }
 
       if (!urlMedia) {
