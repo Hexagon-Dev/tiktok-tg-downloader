@@ -100,25 +100,24 @@ const getId = async (url) => {
   return idVideo.length > 19 ? idVideo.substring(0, idVideo.indexOf('?')) : idVideo;
 };
 
-const getMeta = async (url, watermark, retry = false) => {
+const getMeta = async (url, watermark) => {
   const id = await getId(url);
   const apiUrl = `https://api22-normal-c-alisg.tiktokv.com/aweme/v1/feed/?aweme_id=${id}&iid=7318518857994389254&device_id=7318517321748022790&channel=googleplay&app_name=musical_ly&version_code=300904&device_platform=android&device_type=ASUS_Z01QD&version=9`;
   const request = await fetch(apiUrl, {
     method: 'OPTIONS',
     headers: new Headers(),
   });
-  const res = await request.json();
+  const body = await request.text();
 
-  const waitSeconds = /Too Many Requests: retry after (\d+)/.exec(res.description);
+  if (body.includes('ratelimit triggered')) {
+    throw new Error('Rate limit triggered. Please try again later.');
+  }
 
-  if (waitSeconds) {
-    if (retry) {
-      throw new Error('Failed to fetch tiktok video, error: ' + res.description);
-    }
-
-    await sleep(waitSeconds[1] * 1000);
-
-    return getMeta(url, watermark, true);
+  let res;
+  try {
+    res = JSON.parse(body);
+  } catch (err) {
+    throw new Error('Failed to parse JSON response: ' + err);
   }
 
   if (!res || res.aweme_list[0].aweme_id?.toString() !== id?.toString()) {
@@ -171,10 +170,6 @@ const getMeta = async (url, watermark, retry = false) => {
   };
 };
 
-async function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 async function retry(callback, retries = 3, delay = 1000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -183,7 +178,7 @@ async function retry(callback, retries = 3, delay = 1000) {
       if (attempt === retries) {
         throw error;
       }
-      await sleep(delay);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 }
