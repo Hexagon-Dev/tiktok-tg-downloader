@@ -14,6 +14,9 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
     return
   }
 
+  // Can not define if it is a video or a photo yet.
+  await bot.sendChatAction(chatId, 'upload_photo');
+
   try {
     meta = await retry(() => getMeta(url, true));
   } catch (error) {
