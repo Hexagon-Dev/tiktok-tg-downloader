@@ -25,8 +25,19 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
   if (meta.images.length) {
     if (meta.images.length === 1) {
       await bot.sendPhoto(chatId, meta.images[0]);
-    } else {
+    } else if (meta.images.length < 11) {
       await bot.sendMediaGroup(chatId, meta.images.map((url) => ({ type: 'photo', media: url })));
+    } else {
+      meta.images.reduce((acc, url, index) => {
+        const groupIndex = Math.floor(index / 10);
+
+        if (!acc[groupIndex]) {
+          acc[groupIndex] = [];
+        }
+
+        acc[groupIndex].push({ type: 'photo', media: url });
+        return acc;
+      }, []).forEach(group => bot.sendMediaGroup(chatId, group));
     }
   } else if (meta.url) {
     try {
