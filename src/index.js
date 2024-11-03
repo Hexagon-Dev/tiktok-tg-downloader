@@ -28,16 +28,19 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
     } else if (meta.images.length < 11) {
       await bot.sendMediaGroup(chatId, meta.images.map((url) => ({ type: 'photo', media: url })));
     } else {
-      meta.images.reduce((acc, url, index) => {
+      for (const group of meta.images.reduce((acc, url, index) => {
         const groupIndex = Math.floor(index / 10);
 
         if (!acc[groupIndex]) {
           acc[groupIndex] = [];
         }
 
-        acc[groupIndex].push({ type: 'photo', media: url });
+        acc[groupIndex].push({type: 'photo', media: url});
         return acc;
-      }, []).forEach(group => bot.sendMediaGroup(chatId, group));
+      }, [])) {
+        await bot.sendMediaGroup(chatId, group);
+        await sleep(500);
+      }
     }
   } else if (meta.url) {
     try {
@@ -170,6 +173,10 @@ const getMeta = async (url, watermark) => {
   };
 };
 
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function retry(callback, retries = 3, delay = 1000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -178,7 +185,7 @@ async function retry(callback, retries = 3, delay = 1000) {
       if (attempt === retries) {
         throw error;
       }
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await sleep(delay);
     }
   }
 }
