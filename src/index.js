@@ -6,12 +6,17 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 bot.onText(/\/tt (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
   let meta;
-  const url = match[1];
+  let url = match[1];
 
   if (!url || !/https:\/\/(vm|vt|www)\.tiktok\.com/.test(url)) {
     await bot.sendMessage(chatId, 'Please provide a TikTok URL.');
 
     return
+  }
+
+  // Replace vt with vm, vt videos are for Asia region and can not be downloaded.
+  if (/https:\/\/vt|\.tiktok\.com/.test(url)) {
+    url = url.replace('vt.', 'vm.');
   }
 
   // Can not define if it is a video or a photo yet.
