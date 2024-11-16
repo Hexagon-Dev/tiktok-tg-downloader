@@ -8,7 +8,7 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
   let meta;
   const url = match[1];
 
-  if (!url || !/https:\/\/(vm|www)\.tiktok\.com/.test(url)) {
+  if (!url || !/https:\/\/(vm|vt|www)\.tiktok\.com/.test(url)) {
     await bot.sendMessage(chatId, 'Please provide a TikTok URL.');
 
     return
