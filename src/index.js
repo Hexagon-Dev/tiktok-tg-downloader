@@ -1,5 +1,10 @@
 require('dotenv').config()
 const TelegramBot = require('node-telegram-bot-api');
+const ytdl = require("@distube/ytdl-core");
+const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
+
+const MAX_TELEGRAM_VIDEO_SIZE = 52428800; // 50MB
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
@@ -9,7 +14,7 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
   let url = match[1];
 
   if (!url || !/https:\/\/(vm|vt|www)\.tiktok\.com/.test(url)) {
-    await bot.sendMessage(chatId, 'Please provide a TikTok URL.');
+    await bot.sendMessage(chatId, 'Please provide a valid TikTok URL.');
 
     return
   }
@@ -180,6 +185,88 @@ const getMeta = async (url, watermark) => {
     id: id,
   };
 };
+
+bot.onText(/\/yt (\S+) ?(\S+)/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const url = match[1];
+  const desiredSizeMb = (match[2] ?? '') === '' ? 20 : parseInt(match[2], 10);
+
+  if (!url || !ytdl.validateURL(url)) {
+    await bot.sendMessage(chatId, 'Please provide a valid YouTube URL.');
+
+    return;
+  }
+
+  await bot.sendChatAction(chatId, 'upload_video');
+
+  try {
+    const videoInfo = await ytdl.getInfo(url);
+    const formats = videoInfo.formats;
+
+    const suitableVideoFormats = formats.filter(format =>
+      format.contentLength
+      && format.mimeType.includes('video')
+      && parseInt(format.contentLength, 10) < desiredSizeMb * 1024 * 1024
+    );
+
+    const suitableAudioFormats = formats.filter(format =>
+      format.contentLength
+      && format.mimeType.includes('audio')
+    );
+
+    if (suitableVideoFormats.length === 0 || suitableAudioFormats.length === 0) {
+      await bot.sendMessage(chatId, 'No suitable format found for the video.');
+      return;
+    }
+
+    const tempFileName = `${videoInfo.videoDetails.videoId}_${Date.now()}`;
+    const tempFileVideoPath = `./${tempFileName}.mp4`;
+    const tempFileAudioPath = `./${tempFileName}.mp3`;
+    const tempFileFinalPath = `./${tempFileName}_result.mp4`;
+
+    await downloadFile(url, suitableVideoFormats[0], tempFileVideoPath);
+    await downloadFile(url, suitableAudioFormats[0], tempFileAudioPath);
+
+    const duration = videoInfo.videoDetails.lengthSeconds;
+    const targetBitrate = (desiredSizeMb * 1024 * 1024 * 8) / duration;
+    const targetBitrateKbps = Math.floor(targetBitrate / 1000);
+
+    await new Promise((resolve, reject) => {
+      ffmpeg()
+        .input(tempFileVideoPath)
+        .input(tempFileAudioPath)
+        .output(tempFileFinalPath)
+        .videoBitrate(`${targetBitrateKbps}k`)
+        .audioBitrate('128k')
+        .on('end', resolve)
+        .on('error', reject)
+        .run();
+    });
+
+    if (fs.statSync(tempFileFinalPath).size > MAX_TELEGRAM_VIDEO_SIZE) {
+      await bot.sendMessage(chatId, 'The video is too large to send to Telegram. Try specifying a smaller size.');
+    } else {
+      await bot.sendVideo(chatId, fs.createReadStream(tempFileFinalPath));
+    }
+
+    fs.unlinkSync(tempFileFinalPath);
+    fs.unlinkSync(tempFileVideoPath);
+    fs.unlinkSync(tempFileAudioPath);
+  } catch (err) {
+    await bot.sendMessage(chatId, 'Error fetching video info: ' + err.message);
+  }
+});
+
+async function downloadFile(url, format, tempFilePath) {
+  await new Promise((resolve, reject) => {
+    const stream = ytdl(url, { format: format });
+
+    const writeStream = fs.createWriteStream(tempFilePath);
+    stream.pipe(writeStream);
+    stream.on('end', resolve);
+    stream.on('error', reject);
+  });
+}
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
