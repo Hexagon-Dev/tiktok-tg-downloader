@@ -2,9 +2,14 @@
 
 ## Description
 
-Bot that allows to download TikTok videos or photos, runs on Node.js.
+Bot that allows to download TikTok videos or photos.
+Also can download videos from YouTube.
+Runs on Node.js.
 
-Command: `/tt <tiktok_url>`
+## Commands
+
+`/tt <tiktok_url>`  
+`/yt <youtube_url> <size_mb>`
 
 ## Setup
 

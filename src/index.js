@@ -253,7 +253,7 @@ bot.onText(/\/yt (\S+) ?(\S+)/, async (msg, match) => {
     fs.unlinkSync(tempFileVideoPath);
     fs.unlinkSync(tempFileAudioPath);
   } catch (err) {
-    await bot.sendMessage(chatId, 'Error fetching video info: ' + err.message);
+    await bot.sendMessage(chatId, 'Failed sending video: ' + err.message);
   }
 });
 
