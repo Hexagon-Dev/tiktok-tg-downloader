@@ -187,7 +187,7 @@ const getMeta = async (url, watermark) => {
   };
 };
 
-bot.onText(/\/yt (\S+) ?(\S+)/, async (msg, match) => {
+bot.onText(/\/yt (\S+) ?(\S+)?/, async (msg, match) => {
   const chatId = msg.chat.id;
   const url = match[1];
   const desiredSizeMb = (match[2] ?? '') === '' ? 20 : parseInt(match[2], 10);
