@@ -3,6 +3,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const ytdl = require("@distube/ytdl-core");
 const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
+const {copy} = require("fluent-ffmpeg/lib/utils");
 
 const MAX_TELEGRAM_VIDEO_SIZE = 52428800; // 50MB
 
@@ -227,17 +228,12 @@ bot.onText(/\/yt (\S+) ?(\S+)/, async (msg, match) => {
     await downloadFile(url, suitableVideoFormats[0], tempFileVideoPath);
     await downloadFile(url, suitableAudioFormats[0], tempFileAudioPath);
 
-    const duration = videoInfo.videoDetails.lengthSeconds;
-    const targetBitrate = (desiredSizeMb * 1024 * 1024 * 8) / duration;
-    const targetBitrateKbps = Math.floor(targetBitrate / 1000);
-
     await new Promise((resolve, reject) => {
       ffmpeg()
         .input(tempFileVideoPath)
         .input(tempFileAudioPath)
         .output(tempFileFinalPath)
-        .videoBitrate(`${targetBitrateKbps}k`)
-        .audioBitrate('128k')
+        .outputOptions('-c copy')
         .on('end', resolve)
         .on('error', reject)
         .run();
