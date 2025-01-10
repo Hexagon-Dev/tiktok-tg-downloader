@@ -3,17 +3,27 @@ const TelegramBot = require('node-telegram-bot-api');
 const ytdl = require("@distube/ytdl-core");
 const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
-const {copy} = require("fluent-ffmpeg/lib/utils");
 
 const MAX_TELEGRAM_VIDEO_SIZE = 52428800; // 50MB
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
+bot.onText('(.+)', async (msg, match) => {
+  if (msg.chat.type !== 'private' || match[1].startsWith('/')) {
+    return;
+  }
+
+  await parseTikTokUrl(match[1], msg.chat.id);
+});
+
 bot.onText(/\/tt (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
-  let meta;
   let url = match[1];
 
+  await parseTikTokUrl(url, chatId);
+});
+
+async function parseTikTokUrl(url, chatId) {
   if (!url || !/https:\/\/(vm|vt|www)\.tiktok\.com/.test(url)) {
     await bot.sendMessage(chatId, 'Please provide a valid TikTok URL.');
 
@@ -28,6 +38,8 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
   // Can not define if it is a video or a photo yet.
   await bot.sendChatAction(chatId, 'upload_photo');
 
+  let meta;
+
   try {
     meta = await retry(() => getMeta(url, true));
   } catch (error) {
@@ -40,7 +52,7 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
     if (meta.images.length === 1) {
       await bot.sendPhoto(chatId, meta.images[0]);
     } else if (meta.images.length < 11) {
-      await bot.sendMediaGroup(chatId, meta.images.map((url) => ({ type: 'photo', media: url })));
+      await bot.sendMediaGroup(chatId, meta.images.map((url) => ({type: 'photo', media: url})));
     } else {
       for (const group of meta.images.reduce((acc, url, index) => {
         const groupIndex = Math.floor(index / 10);
@@ -77,7 +89,7 @@ bot.onText(/\/tt (.+)/, async (msg, match) => {
   } else {
     await bot.sendMessage(chatId, 'Failed to fetch tiktok url, URL is not available.');
   }
-});
+}
 
 const getId = async (url) => {
   // If mobile link, fetch the desktop link first.
