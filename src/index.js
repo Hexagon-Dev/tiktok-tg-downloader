@@ -1,8 +1,12 @@
-require('dotenv').config()
-const TelegramBot = require('node-telegram-bot-api');
-const ytdl = require("@distube/ytdl-core");
-const fs = require('fs');
-const ffmpeg = require('fluent-ffmpeg');
+import { config } from 'dotenv';
+import TelegramBot from 'node-telegram-bot-api';
+import ytdl from '@distube/ytdl-core';
+import * as fs from 'fs';
+import ffmpeg from 'fluent-ffmpeg';
+import https from 'https';
+import followRedirects from 'follow-redirects';
+
+config();
 
 const MAX_TELEGRAM_VIDEO_SIZE = 52428800; // 50MB
 
@@ -73,7 +77,7 @@ async function parseTikTokUrl(url, chatId) {
       await bot.sendVideo(chatId, meta.url);
     } catch (e) {
       try {
-        require('https').get(meta.url, async (response) => {
+        https.get(meta.url, async (response) => {
           if (response.statusCode !== 200) {
             await bot.sendMessage(chatId, 'Failed to send video, error: ' + response.statusCode + ' - ' + meta.url);
 
@@ -107,7 +111,7 @@ const getId = async (url) => {
 
   if (url.includes('/t/')) {
     url = await new Promise((resolve) => {
-      require('follow-redirects').https.get(url, (res) => resolve(res.responseUrl));
+      followRedirects.https.get(url, (res) => resolve(res.responseUrl));
     });
   }
   const matching = url.includes('/video/');

@@ -32,4 +32,5 @@ jobs:
             --exclude '.env' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ \
-            $USER@$SERVER_IP:$REMOTE_DIR/
+            $USER@$SERVER_IP:$REMOTE_DIR/ \
+            && ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=no $USER@$SERVER_IP "cd $REMOTE_DIR && npm install && systemctl restart tiktok-tg-downloader" \
