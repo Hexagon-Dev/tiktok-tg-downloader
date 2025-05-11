@@ -20,4 +20,4 @@ Runs on Node.js.
 5. Run `npm start` to start the bot.
 
 Bot uses polling to get updates, you can change it to webhooks if you want.  
-If you want to deploy it, you can use [pm2](https://pm2.keymetrics.io/).
+To deploy - create `tiktog-tg-downloader.service`, deploy automatically restarts it.
