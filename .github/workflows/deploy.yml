@@ -33,8 +33,5 @@ jobs:
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ \
             $USER@$SERVER_IP:$REMOTE_DIR/
-          
-          echo "$SSH_PRIVATE_KEY" > private_key
-          chmod 600 private_key
 
-          ssh -i private_key  -o StrictHostKeyChecking=no $USER@$SERVER_IP "cd $REMOTE_DIR && npm install && systemctl restart tiktok-tg-downloader" \
+          ssh -o StrictHostKeyChecking=no $USER@$SERVER_IP "cd $REMOTE_DIR && npm install && systemctl restart tiktok-tg-downloader" \
