@@ -64,18 +64,7 @@ async function handleTikTokCommand(msg, match) {
   }
 }
 
-// Handle url as a tiktok command by default.
-bot.onText(new RegExp('(\S+)'), async (msg, match) => {
-  if (msg.chat.type !== 'private' || match?.at(1)?.startsWith('/')) {
-    return;
-  }
-
-  await handleTikTokCommand(msg, match);
-});
-
-bot.onText(/\/tt (\S+)/, handleTikTokCommand);
-
-bot.onText(/\/yt (\S+) ?(\S+)?/, async (msg, match) => {
+async function handleYoutubeCommand(msg, match) {
   const chatId = msg.chat.id;
   const url = match?.at(1);
   const desiredSizeMb = (match?.at(2) ?? '') === '' ? 20 : parseInt(match?.at(2) ?? '20', 10);
@@ -99,7 +88,25 @@ bot.onText(/\/yt (\S+) ?(\S+)?/, async (msg, match) => {
   } catch (err) {
     await bot.sendMessage(chatId, `Failed sending video: ${err.message}`);
   }
+}
+
+bot.onText(/(\S+)/, async (msg, match) => {
+  if (msg.chat.type !== 'private' || match?.at(1)?.startsWith('/')) {
+    return;
+  }
+
+  const url = match?.at(1) ?? '';
+
+  if (url.includes('tiktok.com')) {
+    await handleTikTokCommand(msg, match);
+  } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    await handleYoutubeCommand(msg, match);
+  }
 });
+
+bot.onText(/\/tt (\S+)/, handleTikTokCommand);
+
+bot.onText(/\/yt (\S+) ?(\S+)?/, handleYoutubeCommand);
 
 bot.onText(/\/ym (\S+)/, async (msg, match) => {
   const chatId = msg.chat.id;
