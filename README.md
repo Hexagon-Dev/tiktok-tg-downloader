@@ -3,13 +3,14 @@
 ## Description
 
 Bot that allows to download TikTok videos or photos.
-Also can download videos from YouTube.
+Also can download video and audio from YouTube.
 Runs on Node.js.
 
 ## Commands
 
-`/tt <tiktok_url>`  
-`/yt <youtube_url> <size_mb>`
+`/tt <tiktok_url>` - Download TikTok video.  
+`/yt <youtube_url> <size_mb>` - Download YouTube video.
+`/ym <youtube_url>` - Download YouTube audio.
 
 ## Setup
 
