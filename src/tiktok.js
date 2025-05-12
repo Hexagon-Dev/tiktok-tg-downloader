@@ -1,4 +1,5 @@
 import followRedirects from 'follow-redirects';
+import { retry } from './utils.js';
 
 export function validateTikTokURL(url) {
   if (!url || !/https:\/\/(vm|vt|www)\.tiktok\.com/.test(url)) {
@@ -38,7 +39,7 @@ const getId = async (url) => {
     const text = await response.text();
     const matches = text.match(/"canonical":\s*"([^"]+)"/);
 
-    if (!matches[1]) {
+    if (!matches?.at(1)) {
       throw new Error('Failed to fetch tiktok video, URL is not available.');
     }
 
@@ -92,7 +93,7 @@ const getMeta = async (url, watermark) => {
     throw new Error('Video not found or deleted.');
   }
 
-  let urlMedia = '';
+  let urlMedia = null;
   let imageUrls = [];
 
   // Check if video is a slideshow.
@@ -104,7 +105,6 @@ const getMeta = async (url, watermark) => {
       imageUrls.push(element.display_image.url_list[1]);
     });
   } else if (res.aweme_list[0].video) {
-    urlMedia = null;
     const video = res.aweme_list[0].video;
 
     if (watermark && video.download_addr && video.download_addr.url_list && video.download_addr.url_list.length > 0) {
@@ -137,21 +137,3 @@ const getMeta = async (url, watermark) => {
     id: id,
   };
 };
-
-async function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function retry(callback, retries = 3, delay = 1000) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      return await callback();
-    } catch (error) {
-      if (attempt === retries) {
-        throw error;
-      }
-
-      await sleep(delay);
-    }
-  }
-}
