@@ -4,6 +4,7 @@ import https from 'https';
 import { validateTikTokURL, parseTikTokUrl } from './tiktok.js';
 import { validateYoutubeURL, parseYoutubeUrl } from './youtube.js';
 import { sleep } from './utils.js';
+import { getStats, insertMessage } from './analytics.js';
 
 config();
 
@@ -90,6 +91,14 @@ async function handleYoutubeCommand(msg, match) {
   }
 }
 
+bot.onText(/(.+)/, async (msg) => {
+  try {
+    insertMessage({ id: msg.message_id, chat: msg.chat, user: msg.from, text: msg.text, created_at: msg.date });
+  } catch (error) {
+    console.error('Failed to insert message:', error);
+  }
+});
+
 bot.onText(/(\S+)/, async (msg, match) => {
   if (msg.chat.type !== 'private' || match?.at(1)?.startsWith('/')) {
     return;
@@ -130,5 +139,44 @@ bot.onText(/\/ym (\S+)/, async (msg, match) => {
     cleanup();
   } catch (err) {
     await bot.sendMessage(chatId, `Failed sending audio: ${err.message}`);
+  }
+});
+
+bot.onText(/\/stats/, async (msg) => {
+  const chatId = msg.chat.id;
+
+  if (msg.from?.id.toString() !== process.env.TELEGRAM_ADMIN_ID) {
+    await bot.sendMessage(chatId, 'You are not authorized to use this command.');
+
+    return;
+  }
+
+  try {
+    const {
+      counts,
+      lastMessages,
+      lastUsers,
+      topUsers,
+    } = getStats();
+
+    await bot.sendMessage(chatId, `
+Statistics:
+
+Users: ${counts.users}
+Chats: ${counts.chats}
+Messages: ${counts.messages}
+
+Last messages:\n` +
+      lastMessages.map((message) => `- ${message.text} (${message.created_at}) by ${message.user?.username ?? message.user?.first_name ?? 'Unknown'}`).join('\n')
+      + `\n\nLast users:\n` +
+      lastUsers.map((user) => `- ${user.username ?? user.first_name} (${user.created_at})`).join('\n')
+      + `\n\nTop users:\n` +
+      topUsers.map((user) => `- ${user.username ?? user.first_name} (${user.message_count} messages)`).join('\n')
+    );
+  } catch (error) {
+    console.error('Failed to get stats:', error);
+    await bot.sendMessage(chatId, 'Failed to get stats.');
+
+    return;
   }
 });
