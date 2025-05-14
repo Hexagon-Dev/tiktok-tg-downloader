@@ -30,6 +30,7 @@ jobs:
           rsync -avz --delete \
             --exclude 'node_modules/' \
             --exclude '.env' \
+            --exclude 'analytics.db' \
             -e "ssh -o StrictHostKeyChecking=no" \
             ./ \
             $USER@$SERVER_IP:$REMOTE_DIR/
