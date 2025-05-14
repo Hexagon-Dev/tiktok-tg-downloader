@@ -177,9 +177,9 @@ Chats: ${counts.chats}
 Messages: ${counts.messages}
 
 Last messages:\n` +
-      lastMessages.map((m) => `- ${m.text} (${(new Date(m.created_at)).toISOString()}) by ${m.user?.username ?? m.user?.first_name ?? 'Unknown'}`).join('\n')
+      lastMessages.map((m) => `- ${m.text} (${(new Date(m.created_at * 1000)).toISOString()}) by ${m.user?.username ?? m.user?.first_name ?? 'Unknown'}`).join('\n')
       + `\n\nLast users:\n` +
-      lastUsers.map((u) => `- ${u.username ?? u.first_name} (${(new Date(u.created_at)).toISOString()})`).join('\n')
+      lastUsers.map((u) => `- ${u.username ?? u.first_name} (${(new Date(u.created_at * 1000)).toISOString()})`).join('\n')
       + `\n\nTop users:\n` +
       topUsers.map((u) => `- ${u.username ?? u.first_name} (${u.message_count} messages)`).join('\n')
     );
