@@ -92,6 +92,10 @@ async function handleYoutubeCommand(msg, match) {
 }
 
 bot.onText(/(.+)/, async (msg) => {
+  if (!process.env.ENABLE_ANALYTICS) {
+    return;
+  }
+
   try {
     insertMessage({ id: msg.message_id, chat: msg.chat, user: msg.from, text: msg.text, created_at: msg.date });
   } catch (error) {
@@ -145,8 +149,14 @@ bot.onText(/\/ym (\S+)/, async (msg, match) => {
 bot.onText(/\/stats/, async (msg) => {
   const chatId = msg.chat.id;
 
-  if (msg.from?.id.toString() !== process.env.TELEGRAM_ADMIN_ID) {
+  if (process.env.TELEGRAM_ADMIN_ID && msg.from?.id.toString() !== process.env.TELEGRAM_ADMIN_ID) {
     await bot.sendMessage(chatId, 'You are not authorized to use this command.');
+
+    return;
+  }
+
+  if (!process.env.ENABLE_ANALYTICS) {
+    await bot.sendMessage(chatId, 'Analytics are disabled.');
 
     return;
   }
