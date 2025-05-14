@@ -82,7 +82,7 @@ function getLastMessages(count = 5) {
 }
 
 function getLastUsers(count = 5) {
-  return db.prepare('SELECT * FROM users LEFT JOIN messages m ON users.id = m.user_id ORDER BY m.created_at DESC LIMIT ?').all(count);
+  return db.prepare('SELECT * FROM users LEFT JOIN messages m ON users.id = m.user_id GROUP BY users.id ORDER BY m.created_at DESC LIMIT ?').all(count);
 }
 
 function getTopUsers(count = 5) {

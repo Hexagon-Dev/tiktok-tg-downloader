@@ -177,11 +177,11 @@ Chats: ${counts.chats}
 Messages: ${counts.messages}
 
 Last messages:\n` +
-      lastMessages.map((message) => `- ${message.text} (${message.created_at}) by ${message.user?.username ?? message.user?.first_name ?? 'Unknown'}`).join('\n')
+      lastMessages.map((m) => `- ${m.text} (${(new Date(m.created_at)).toISOString()}) by ${m.user?.username ?? m.user?.first_name ?? 'Unknown'}`).join('\n')
       + `\n\nLast users:\n` +
-      lastUsers.map((user) => `- ${user.username ?? user.first_name} (${user.created_at})`).join('\n')
+      lastUsers.map((u) => `- ${u.username ?? u.first_name} (${(new Date(u.created_at)).toISOString()})`).join('\n')
       + `\n\nTop users:\n` +
-      topUsers.map((user) => `- ${user.username ?? user.first_name} (${user.message_count} messages)`).join('\n')
+      topUsers.map((u) => `- ${u.username ?? u.first_name} (${u.message_count} messages)`).join('\n')
     );
   } catch (error) {
     console.error('Failed to get stats:', error);
