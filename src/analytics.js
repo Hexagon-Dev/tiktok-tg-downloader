@@ -13,13 +13,15 @@ function getUserModel(user) {
     userModel = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
 
     if (!userModel) {
-      userModel = db.prepare('INSERT INTO users (id, first_name, last_name, username, language_code) VALUES (?, ?, ?, ?, ?)').run([
+      db.prepare('INSERT INTO users (id, first_name, last_name, username, language_code) VALUES (?, ?, ?, ?, ?)').run([
         user.id,
         user.first_name,
         user.last_name,
         user.username,
         user.language_code,
       ]);
+
+      return getUserModel(user);
     }
   }
 
@@ -33,12 +35,14 @@ function getChatModel(chat) {
     chatModel = db.prepare('SELECT * FROM chats WHERE id = ?').get(chat.id);
 
     if (!chatModel) {
-      chatModel = db.prepare('INSERT INTO chats (id, type, title, username) VALUES (?, ?, ?, ?)').run([
+      db.prepare('INSERT INTO chats (id, type, title, username) VALUES (?, ?, ?, ?)').run([
         chat.id,
         chat.type,
         chat.title,
         chat.username,
       ]);
+
+      return getChatModel(chat);
     }
   }
 
