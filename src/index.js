@@ -5,6 +5,7 @@ import { validateTikTokURL, parseTikTokUrl } from './tiktok.js';
 import { validateYoutubeURL, parseYoutubeUrl } from './youtube.js';
 import { sleep } from './utils.js';
 import { getStats, insertMessage } from './analytics.js';
+import { parseTwitterUrl, validateTwitterURL } from './twitter.js';
 
 config();
 
@@ -143,6 +144,23 @@ bot.onText(/\/ym (\S+)/, async (msg, match) => {
     cleanup();
   } catch (err) {
     await bot.sendMessage(chatId, `Failed sending audio: ${err.message}`);
+  }
+});
+
+bot.onText(/\/t (\S+) ?(\S+)?/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const url = match?.at(1);
+
+  try {
+    validateTwitterURL(url);
+
+    await bot.sendChatAction(chatId, 'upload_video');
+
+    const videoUrl = await parseTwitterUrl(url);
+
+    await bot.sendVideo(chatId, videoUrl);
+  } catch (error) {
+    await bot.sendMessage(chatId, error.message);
   }
 });
 
