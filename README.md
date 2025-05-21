@@ -10,7 +10,7 @@ Runs on Node.js.
 
 `/tt <tiktok_url>` - Download TikTok video.  
 `/yt <youtube_url> <size_mb>` - Download YouTube video.  
-`/ym <youtube_url>` - Download YouTube audio.
+`/ym <youtube_url>` - Download YouTube audio.  
 `/t <twitter_url>` - Download Twitter video.
 
 ## Setup
