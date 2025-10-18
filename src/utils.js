@@ -15,3 +15,8 @@ export async function retry(callback, retries = 3, delay = 1000) {
     }
   }
 }
+
+export function randomString(length = 16) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}

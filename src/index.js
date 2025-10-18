@@ -6,6 +6,7 @@ import { validateYoutubeURL, parseYoutubeUrl } from './youtube.js';
 import { sleep } from './utils.js';
 import { getStats, insertMessage } from './analytics.js';
 import { parseTwitterUrl, validateTwitterURL } from './twitter.js';
+import {parseInstagramUrl, validateInstagramURL} from "./instagram.js";
 
 config();
 
@@ -115,6 +116,12 @@ bot.onText(/(\S+)/, async (msg, match) => {
     await handleTikTokCommand(msg, match);
   } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
     await handleYoutubeCommand(msg, match);
+  } else if (url.includes('x.com')) {
+    await handleTwitterCommand(msg, match);
+  } else if (url.includes('instagram.com')) {
+    await handleInstagramCommand(msg, match);
+  } else {
+    await bot.sendMessage(msg.chat.id, 'Send link or use command to interact with bot.')
   }
 });
 
@@ -147,7 +154,7 @@ bot.onText(/\/ym (\S+)/, async (msg, match) => {
   }
 });
 
-bot.onText(/\/t (\S+) ?(\S+)?/, async (msg, match) => {
+async function handleTwitterCommand(msg, match) {
   const chatId = msg.chat.id;
   const url = match?.at(1);
 
@@ -162,7 +169,29 @@ bot.onText(/\/t (\S+) ?(\S+)?/, async (msg, match) => {
   } catch (error) {
     await bot.sendMessage(chatId, error.message);
   }
-});
+}
+
+bot.onText(/\/t (\S+)/, handleTwitterCommand);
+
+async function handleInstagramCommand(msg, match) {
+  const chatId = msg.chat.id;
+  const url = match?.at(1);
+
+  try {
+    validateInstagramURL(url);
+
+    await bot.sendChatAction(chatId, 'upload_video');
+
+    const { stream, cleanup } = await parseInstagramUrl(url);
+
+    await bot.sendVideo(chatId, stream);
+    cleanup();
+  } catch (error) {
+    await bot.sendMessage(chatId, error.message);
+  }
+}
+
+bot.onText(/\/i (\S+)/, handleInstagramCommand);
 
 bot.onText(/\/stats/, async (msg) => {
   const chatId = msg.chat.id;
