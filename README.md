@@ -8,10 +8,11 @@ Runs on Node.js.
 
 ## Commands
 
-`/tt <tiktok_url>` - Download TikTok video.  
-`/yt <youtube_url> <size_mb>` - Download YouTube video.  
-`/ym <youtube_url>` - Download YouTube audio.  
-`/t <twitter_url>` - Download Twitter video.
+`/tt {url}` - Download TikTok video.  
+`/yt {url} {size_mb}` - Download YouTube video.  
+`/ym {url}` - Download YouTube audio.  
+`/t {url}` - Download Twitter video.
+`/i {url}` - Download Twitter video.
 
 ## Setup
 
