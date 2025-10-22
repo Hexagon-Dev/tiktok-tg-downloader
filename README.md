@@ -1,4 +1,4 @@
-# tiktok-tg-downloader
+# hex-tg-downloader
 
 ## Description
 
