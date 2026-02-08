@@ -6,7 +6,7 @@ import { validateYoutubeURL, parseYoutubeUrl } from './youtube.js';
 import { sleep } from './utils.js';
 import { getStats, insertMessage } from './analytics.js';
 import { parseTwitterUrl, validateTwitterURL } from './twitter.js';
-import {parseInstagramUrl, validateInstagramURL} from "./instagram.js";
+import { parseInstagramUrl, validateInstagramURL } from './instagram.js';
 
 config();
 
@@ -70,7 +70,6 @@ async function handleTikTokCommand(msg, match) {
 async function handleYoutubeCommand(msg, match) {
   const chatId = msg.chat.id;
   const url = match?.at(1);
-  const desiredSizeMb = (match?.at(2) ?? '') === '' ? 20 : parseInt(match?.at(2) ?? '20', 10);
 
   try {
     validateYoutubeURL(url);
@@ -83,12 +82,11 @@ async function handleYoutubeCommand(msg, match) {
   await bot.sendChatAction(chatId, 'upload_video');
 
   try {
-    const { title, stream, cleanup } = await parseYoutubeUrl(url, false, desiredSizeMb);
+    const { title, downloadUrl } = await parseYoutubeUrl(url, false);
 
-    await bot.sendVideo(chatId, stream, {}, { filename: `${title}.mp4` });
-
-    cleanup();
+    await bot.sendVideo(chatId, downloadUrl, {}, { filename: `${title}.mp4` });
   } catch (err) {
+    console.error(err)
     await bot.sendMessage(chatId, `Failed sending video: ${err.message}`);
   }
 }

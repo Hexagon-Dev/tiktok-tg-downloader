@@ -1,6 +1,4 @@
 import ytdl from '@distube/ytdl-core';
-import * as fs from 'fs';
-import ffmpeg from 'fluent-ffmpeg';
 import axios from "axios";
 
 export function validateYoutubeURL(url) {
@@ -9,93 +7,80 @@ export function validateYoutubeURL(url) {
   }
 }
 
-export async function parseYoutubeUrl(url, audioOnly = false, desiredSizeMb = 10) {
-  if (desiredSizeMb > 50) {
-    throw new Error('Max file size for telegram is 50MB, please use lower size.')
-  }
-
+async function getVideoInfo(url) {
   let videoInfo;
 
   try {
-    const { data } = await axios.post('https://downr.org/.netlify/functions/download', { url });
+    const { data } = await axios.post('https://api.quickdownl.com/youtube-downloads/info', {url});
+
     videoInfo = data;
   } catch (e) {
-    throw e.response.data;
+    throw e.response.data ?? 'Failed to fetch YouTube video.';
   }
 
   if (videoInfo.error) {
     throw new Error('Failed to fetch YouTube video.');
   }
 
-  const formats = videoInfo.medias;
+  const formats = videoInfo.video;
+  let quality = '360';
+  let video = '';
 
-  const videoFormats = formats.filter(format => format.type === 'video' && format.ext === 'mp4');
-  const audioFormats = formats.filter(format => format.type === 'audio' && format.ext === 'm4a');
-
-  let selectedVideo = videoFormats
-    .filter(format => (format.bitrate * videoInfo.duration) / 8 / 1024 / 1024 < desiredSizeMb)
-    .sort((a, b) => b.bitrate - a.bitrate)[0];
-
-  if (!selectedVideo) {
-    selectedVideo = videoFormats.sort((a, b) => a.bitrate - b.bitrate)[0];
+  if (formats.find(f => f.quality === '360')) {
+    video = formats.find(f => f.quality === '360');
+  } else if (formats.find(f => f.quality === '480')) {
+    video = formats.find(f => f.quality === '480');
+    quality = '480';
+  } else if (formats.find(f => f.quality === '720')) {
+    video = formats.find(f => f.quality === '720');
+    quality = '720';
   }
 
-  if (!selectedVideo) {
-    throw new Error('No suitable video format found.');
-  }
-
-  const selectedAudio = audioFormats.sort((a, b) => b.bitrate - a.bitrate)[0];
-
-  if (!selectedAudio) {
-    throw new Error('No suitable audio format found.');
-  }
-
-  const tempFileName = `${videoInfo.title}_${Date.now()}`;
-  const tempFileVideoPath = `./temp/${tempFileName}.mp4`;
-  const tempFileAudioPath = `./temp/${tempFileName}.m4a`;
-  const tempFileFinalPath = `./temp/${tempFileName}_result.mp4`;
-
-  await Promise.all([
-    downloadFile(selectedVideo.url, tempFileVideoPath),
-    downloadFile(selectedAudio.url, tempFileAudioPath),
-  ]);
-
-  await new Promise((resolve, reject) => {
-    ffmpeg()
-      .input(tempFileVideoPath)
-      .input(tempFileAudioPath)
-      .output(tempFileFinalPath)
-      .outputOptions('-c copy')
-      .on('end', resolve)
-      .on('error', reject)
-      .run();
-  });
-
-  return {
-    title: videoInfo.title,
-    stream: fs.createReadStream(tempFileFinalPath),
-    cleanup: () => {
-      fs.unlinkSync(tempFileFinalPath);
-      fs.unlinkSync(tempFileVideoPath);
-      fs.unlinkSync(tempFileAudioPath);
-    }
-  };
+  return { title: videoInfo.meta.title, resourceId: videoInfo.meta.resourceId, url: video.url, quality };
 }
 
-async function downloadFile(url, tempFilePath) {
-  await new Promise((resolve, reject) => {
-    const writeStream = fs.createWriteStream(tempFilePath);
+async function requestProcessing(url, resourceId, quality) {
+  let response;
 
-    axios({
-      method: 'get',
-      url,
-      responseType: 'stream',
-    })
-      .then(response => {
-        response.data.pipe(writeStream);
-        writeStream.on('finish', resolve);
-        writeStream.on('error', reject);
-      })
-      .catch(reject);
-  });
+  try {
+    const { data } = await axios.get(`https://api.quickdownl.com${url}`);
+
+    response = data;
+  } catch (e) {
+    throw e.response.data ?? 'Failed to process YouTube video.';
+  }
+
+  return { taskId: response.taskId, retryDelayMs: response.retryDelayMs };
+}
+
+export async function parseYoutubeUrl(url, audioOnly = false) {
+  const { title, resourceId, url: videoUrl, quality } = await getVideoInfo(url);
+
+  const { taskId } = await requestProcessing(videoUrl, resourceId, quality);
+
+  const retryDelayMs = 3000;
+
+  await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+
+  let downloadUrl;
+
+  while (!downloadUrl) {
+    try {
+      const { data } = await axios.get(`https://api.quickdownl.com/youtube-downloads/status/${taskId}`, { params: { resourceId, service: 'master', type: 'video', quality } });
+
+      if (data.error) {
+        throw new Error('Failed to process YouTube video.');
+      }
+
+      downloadUrl = data.downloadUrl;
+    } catch (e) {
+      if (e.response?.data?.error === 'Processing') {
+        await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+      } else {
+        throw e.response?.data ?? 'Failed to process YouTube video.';
+      }
+    }
+  }
+
+  return { title, downloadUrl };
 }
